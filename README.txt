@@ -80,7 +80,14 @@
     input1.txt, input2.txt (Input Data for the Binary)
     output1.txt, output2.txt (Output generated from Binary)
     expout1.txt, expout2.txt (Expected Output for the tests)
+    
+    Usage:
+    ------
+    compile
+    go build filesystem.go
 
+    ./filesystem input1.txt > output1.txt
+    ./filesystem input2.txt > output2.txt
     
         
 
