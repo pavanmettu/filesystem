@@ -221,31 +221,90 @@ type marker struct {
 
 var startmarker string = "├──"
 var endmarker string = "└──"
-var nomarker string = "│   "
-
-func treeHelper(node *DirNode, buf string) {
-	dirnames := []string{}
-	for k := range node.dirs {
-		v, _ := node.dirs[k]
-		dirnames = append(dirnames, v.dirname)
-	}
-	sort.Strings(dirnames)
-	for index, dirent := range dirnames {
-		dirv, _ := node.dirs[dirent]
-		if index == len(dirnames)-1 {
-			fmt.Println(buf+endmarker, dirent)
-			treeHelper(&dirv, buf+"    ")
-		} else {
-			fmt.Println(buf+startmarker, dirent)
-			treeHelper(&dirv, buf+nomarker)
-		}
-	}
-}
+var nomarker string = "│"
 
 func (fs *FileSystem) tree() {
+	var buf strings.Builder
+	curdir := fs.cdirNode
+	mkr := marker{curdir, ""}
+	stack := []marker{}
+	stack = append(stack, mkr)
+	visited := make(map[*DirNode]bool)
 	fmt.Printf("Tree of %s:\n", fs.cdirName)
-	fmt.Println(".")
-	treeHelper(fs.cdirNode, "")
+	printTree(stack, &buf, visited, curdir.depth)
+	fmt.Printf(buf.String())
+}
+
+func printTree(stack []marker, buf *strings.Builder, visited map[*DirNode]bool, offset int) {
+	if len(stack) == 0 {
+		return
+	}
+	last := &DirNode{}
+	lastflg := false
+	for len(stack) > 0 {
+		mkr := stack[len(stack)-1]
+		subtree := mkr.node
+		visited[subtree] = true
+		depth := subtree.depth - offset
+		nodename := subtree.dirname
+		if depth == 0 {
+			buf.WriteString(".")
+		} else {
+			s := ""
+			if depth == 1 {
+				s += mkr.marker
+			} else {
+				if lastflg {
+
+				}
+				s += nomarker
+				s += " "
+				for i := 0; i < depth*4-6; i++ {
+					s += " "
+				}
+				s += mkr.marker
+			}
+			buf.WriteString(s)
+			buf.WriteString(" ")
+			buf.WriteString(nodename)
+		}
+		buf.WriteString("\n")
+		stack = stack[:len(stack)-1]
+		if last == subtree {
+			lastflg = true
+		}
+		sorts := []*DirNode{}
+		changed := false
+		for key := range subtree.dirs {
+			val, _ := subtree.dirs[key]
+			_, ok := visited[&val]
+			if !ok {
+				changed = true
+				sorts = append(sorts, &val)
+			}
+		}
+		if changed {
+			sort.Slice(sorts, func(i, j int) bool {
+				if sorts[i].dirname < sorts[j].dirname {
+					return true
+				}
+				return false
+			})
+			mrkr := ""
+			for i := len(sorts) - 1; i >= 0; i-- {
+				if len(sorts) > 1 && i != len(sorts)-1 {
+					mrkr = startmarker
+				} else if i == len(sorts)-1 {
+					mrkr = endmarker
+				}
+				if sorts[i].depth-offset == 1 {
+					last = sorts[i]
+				}
+				newmrkr := marker{sorts[i], mrkr}
+				stack = append(stack, newmrkr)
+			}
+		}
+	}
 }
 
 // returns dirNode, exists or not, local or not
@@ -253,7 +312,7 @@ func getdestNode(fs *FileSystem, dest string) (*DirNode, bool, bool) {
 	cdir := fs.cdirNode
 	dstarr := strings.Split(dest, "\\")
 	if len(dstarr) == 1 || (len(dstarr) == 2 && dstarr[0] == ".") {
-		ddirNode, dok := cdir.dirs[dstarr[1]]
+		ddirNode, dok := cdir.dirs[dest]
 		if dok {
 			return &ddirNode, true, true
 		} else {
@@ -295,15 +354,8 @@ func updateDepth(dnode *DirNode) {
 	}
 }
 
-func (fs *FileSystem) mv(tsrc, dest string) {
+func (fs *FileSystem) mv(src, dest string) {
 	cdir := fs.cdirNode
-	src := ""
-	parsesrc := strings.Split(tsrc, "\\")
-	if len(parsesrc) == 1 {
-		src = parsesrc[0]
-	} else {
-		src = parsesrc[len(parsesrc)-1]
-	}
 	sdirNode, sok := cdir.dirs[src]
 	if !sok {
 		fmt.Printf("%s directory doesnt exist.\n", src)

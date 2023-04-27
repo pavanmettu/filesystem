@@ -1,0 +1,20 @@
+Command: mkdir   sub3
+Command: mkdir   sub4
+Command: tree
+Tree of root:
+.
+├── sub3
+└── sub4
+Command: cd      sub4
+Command: mkdir   sub41
+Command: mkdir   sub42
+Command: mkdir   sub43
+Command: up
+Command: tree
+Tree of root:
+.
+├── sub3
+└── sub4
+    ├── sub41
+    ├── sub42
+    └── sub43
