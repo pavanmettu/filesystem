@@ -208,17 +208,6 @@ func (fs *FileSystem) cd(dirname string) {
 	fs.cdirName += dirname
 }
 
-/*
- * Use DFS here to print the file system making use of the levels in the structure
- */
-
-// 1 - first marker
-// 2 - end marker
-type marker struct {
-	node   *DirNode
-	marker string
-}
-
 var startmarker string = "├──"
 var endmarker string = "└──"
 var nomarker string = "│   "
